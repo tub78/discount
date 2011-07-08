@@ -466,7 +466,7 @@ spin(FILE *template, MMIOT *doc, FILE *output)
 
 		for (i=0; i < NR(keyword); i++)
 		    if ( thesame(p, keyword[i].kw) ) {
-			if ( keyword[i].where & where )
+			/* if ( keyword[i].where & where ) */
 			    (*keyword[i].what)(doc,output,flags,where);
 			break;
 		    }
