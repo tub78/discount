@@ -963,7 +963,11 @@ maybe_tag_or_link(MMIOT *f)
 	}
 	else if ( isspace(c) )
 	    break;
+#if WITH_GITHUB_TAGS
+	else if ( ! (c == '/' || c == '-' || c == '_' || isalnum(c) ) )
+#else
 	else if ( ! (c == '/' || isalnum(c) ) )
+#endif
 	    maybetag=0;
     }
 
@@ -1311,6 +1315,15 @@ text(MMIOT *f)
 				Qchar(c, f);
 				break;
 				
+		    case ':': case '|':
+				if ( f->flags & MKD_NOTABLES ) {
+				    Qchar('\\', f);
+				    shift(f,-1);
+				    break;
+				}
+				Qchar(c, f);
+				break;
+				
 		    case '>': case '#': case '.': case '-':
 		    case '+': case '{': case '}': case ']':
 		    case '!': case '[': case '*': case '_':
@@ -1353,6 +1366,17 @@ text(MMIOT *f)
 static void
 printheader(Paragraph *pp, MMIOT *f)
 {
+#if WITH_ID_ANCHOR
+    Qprintf(f, "<h%d", pp->hnumber);
+    if ( f->flags & MKD_TOC ) {
+	Qstring(" id=\"", f);
+	mkd_string_to_anchor(T(pp->text->text),
+			     S(pp->text->text),
+			     (mkd_sta_function_t)Qchar, f, 1);
+	Qchar('"', f);
+    }
+    Qchar('>', f);
+#else
     if ( f->flags & MKD_TOC ) {
 	Qstring("<a name=\"", f);
 	mkd_string_to_anchor(T(pp->text->text),
@@ -1361,6 +1385,7 @@ printheader(Paragraph *pp, MMIOT *f)
 	Qstring("\"></a>\n", f);
     }
     Qprintf(f, "<h%d>", pp->hnumber);
+#endif
     push(T(pp->text->text), S(pp->text->text), f);
     text(f);
     Qprintf(f, "</h%d>", pp->hnumber);
@@ -1387,8 +1412,11 @@ splat(Line *p, char *block, Istring align, int force, MMIOT *f)
 	if ( force && (colno >= S(align)-1) )
 	    idx = S(p->text);
 	else
-	    while ( (idx < S(p->text)) && (T(p->text)[idx] != '|') )
+	    while ( (idx < S(p->text)) && (T(p->text)[idx] != '|') ) {
+		if ( T(p->text)[idx] == '\\' )
+		    ++idx;
 		++idx;
+	    }
 
 	Qprintf(f, "<%s%s>",
 		   block,
@@ -1436,7 +1464,9 @@ printtable(Paragraph *pp, MMIOT *f)
 	
 	last=first=0;
 	for (end=start ; (end < S(dash->text)) && p[end] != '|'; ++ end ) {
-	    if ( !isspace(p[end]) ) {
+	    if ( p[end] == '\\' )
+		++ end;
+	    else if ( !isspace(p[end]) ) {
 		if ( !first) first = p[end];
 		last = p[end];
 	    }
