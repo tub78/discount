@@ -26,7 +26,9 @@ typedef struct footnote {
 typedef struct line {
     Cstring text;
     struct line *next;
-    int dle;
+    int dle;			/* leading indent on the line */
+    int flags;			/* special attributes for this line */
+#define PIPECHAR	0x01		/* line contains a | */
 } Line;
 
 
@@ -156,7 +158,7 @@ typedef int (*mkd_sta_function_t)(const int,const void*);
 extern void mkd_string_to_anchor(char*,int, mkd_sta_function_t, void*, int);
 
 extern Document *mkd_in(FILE *, DWORD);
-extern Document *mkd_string(char*,int, DWORD);
+extern Document *mkd_string(const char*,int, DWORD);
 
 extern void mkd_initialize();
 extern void mkd_shlib_destructor();
