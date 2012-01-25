@@ -385,8 +385,13 @@ EOF
     TLOGN " ($AC_CC)"
 
     if [ $status -eq 0 ]; then
-	if $AC_CC -v 2>&1 | grep 'gcc version' >/dev/null; then
+	if $AC_CC -x c /dev/null -dM -E 2>&1 | grep '__clang__' >/dev/null; then
+	    TLOG " yuck, you're using clang"
+	    IS_CLANG=T
+	    IS_BROKEN_CC=T
+	elif $AC_CC -v 2>&1 | grep 'gcc version' >/dev/null; then
 	    TLOG " oh ick, it looks like gcc"
+	    IS_GCC=T
 	    IS_BROKEN_CC=T
 	else
 	    TLOG " ok"
@@ -421,8 +426,6 @@ EOF
     else
 	AC_FAIL " does not compile code properly"
     fi
-
-    AC_SUB 'CC' "$AC_CC"
 
     __remove ngc$$ ngc$$.c ngc$$.o
 
@@ -874,7 +877,6 @@ say(char *w, char *v)
 			: "s:@%s@:%s:g\n", w, v);
 }
 
-void
 main(argc, argv)
 char **argv;
 {
@@ -938,6 +940,7 @@ AC_OUTPUT () {
     AC_SUB 'LIBS'    "$AC_LIBS"
     AC_SUB 'CONFIGURE_FILES' "$__config_files"
     AC_SUB 'GENERATED_FILES' "$*"
+    AC_SUB 'CC'      "$AC_CC"
     AC_SUB 'CFLAGS'  "$AC_CFLAGS"
     AC_SUB 'LDFLAGS' "$AC_LDFLAGS"
     AC_SUB 'srcdir'  "$AC_SRCDIR"
@@ -1177,7 +1180,7 @@ main()
 EOF
 
     if $AC_CC -o ngc$$ ngc$$.c $LIBS; then
-	if ngc$$; then
+	if ./ngc$$; then
 	    TLOG "(found)"
 	    AC_DEFINE 'HAVE_BASENAME' 1
 	    AC_CHECK_HEADERS libgen.h
